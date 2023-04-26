@@ -43,7 +43,7 @@ struct LoginResult {
 
 #[derive(serde::Serialize, Debug ,Deserialize)]
 struct Epass {
-    email : String,
+    email : Option<String>,
     password : String,
     
 }
@@ -139,7 +139,7 @@ pub async fn add_account(mut req : Request<PgPool>) -> tide::Result<Response> {
     let pool = req.state();
      
      match
-     sqlx::query("INSERT INTO login (email, password) VALUES ($1,sha256($2));")
+     sqlx::query("INSERT INTO public.user (email, password) VALUES ($1,sha256($2));")
      .bind(param.email)
      .bind(param.password.as_bytes())
      .execute(pool).await
@@ -182,8 +182,9 @@ pub async fn login_account (mut req : Request<PgPool>) -> tide::Result<Response>
     let mut resp = Response::new(http::StatusCode::Ok);
 
     if let Ok(_record) = sqlx::query!(
-        "SELECT email FROM login WHERE email = $1  and password = sha256($2::text::bytea)",
-        param.email, param.password,
+        "SELECT email FROM public.user WHERE email = $1  and password = sha256($2::text::bytea)",
+        param.email,
+        param.password,
     ).fetch_one(pool).await{
 
         let ret = LoginResult{
